@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>星と子狐の間で / Between Stars and Little Fox</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: linear-gradient(155deg, #cce8f8 0%, #fff9e6 48%, #fde8f2 100%);
+}
+
+body {
+  font-family: "Hiragino Maru Gothic ProN", "BIZ UDPGothic", "Yu Gothic UI", "游ゴシック", "Meiryo", sans-serif;
+  color: #3a3a5c;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Canvas (sparkles) ── */
+#canvas {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Main layout ── */
+#wrap {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.6rem;
+  max-width: 760px;
+  width: 100%;
+  padding: 2rem 2rem 1.5rem;
+}
+
+/* ── Header ── */
+header { text-align: center; line-height: 2; }
+
+.title-jp {
+  font-size: 1.5rem;
+  letter-spacing: 0.5em;
+  color: #5b7fa6;
+  font-weight: bold;
+  text-shadow: 0 1px 6px rgba(91,127,166,0.15);
+}
+
+.title-en {
+  font-size: 0.68rem;
+  letter-spacing: 0.3em;
+  color: #9ab4cc;
+  margin-top: 0.15rem;
+}
+
+.title-authors {
+  font-size: 0.72rem;
+  letter-spacing: 0.25em;
+  color: #b0a8d0;
+  margin-top: 0.1rem;
+}
+
+/* ── Poem area ── */
+#poem {
+  min-height: 15rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2rem;
+  width: 100%;
+}
+
+.line {
+  font-size: 1.55rem;
+  line-height: 3;       /* tall to accommodate ruby */
+  letter-spacing: 0.14em;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.75s ease, transform 0.75s ease;
+  padding: 0 0.5rem;
+}
+
+.line.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Ruby annotation style */
+ruby { ruby-align: center; }
+rt {
+  font-size: 0.52em;
+  opacity: 0.8;
+  letter-spacing: 0.03em;
+}
+
+/* Kenji: sky blue */
+.line.k { color: #1a6fa8; }
+.line.k rt { color: #5599cc; }
+
+/* Nankichi: warm amber */
+.line.n { color: #b85000; }
+.line.n rt { color: #d07030; }
+
+/* Mixed: soft purple */
+.line.m { color: #6c3097; }
+.line.m rt { color: #9060b8; }
+
+/* Closing: golden, smaller */
+.line.c {
+  color: #9a6c00;
+  font-size: 1.1rem;
+  letter-spacing: 0.45em;
+}
+.line.c rt { color: #c49030; }
+
+/* ── Navigation ── */
+#nav {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.nav-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+button {
+  background: rgba(255,255,255,0.72);
+  border: 2px solid #b8d8f0;
+  color: #3a70a0;
+  padding: 0.5rem 1.1rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  border-radius: 14px;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.1s;
+  min-width: 3rem;
+  box-shadow: 0 2px 8px rgba(100,160,220,0.12);
+}
+
+button:hover, button:focus {
+  background: rgba(190,225,248,0.6);
+  border-color: #5b9fd8;
+  color: #1a5080;
+  outline: none;
+  transform: scale(1.06);
+}
+
+button:active { transform: scale(0.97); }
+
+.btn-jump {
+  font-size: 0.82rem;
+  letter-spacing: 0.2em;
+  border-style: dashed;
+  border-color: #f0a0c0;
+  color: #b04070;
+  background: rgba(255,236,246,0.72);
+  padding: 0.48rem 1.6rem;
+  margin-top: 0.2rem;
+}
+
+.btn-jump:hover {
+  border-color: #d05080;
+  color: #80204a;
+  background: rgba(255,215,236,0.72);
+}
+
+.btn-settings {
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  border-color: #a8d098;
+  color: #3a7020;
+  background: rgba(234,252,228,0.72);
+  padding: 0.42rem 1.2rem;
+  margin-top: 0.1rem;
+}
+
+.btn-settings:hover {
+  border-color: #68b040;
+  color: #204808;
+  background: rgba(208,242,196,0.72);
+}
+
+/* ── Coordinates ── */
+#coords {
+  font-size: 0.58rem;
+  color: #7a9abc;
+  font-family: "Hiragino Maru Gothic ProN", monospace;
+  letter-spacing: 0.22em;
+  text-align: center;
+  line-height: 1.9;
+}
+
+#coords ruby { ruby-align: center; }
+#coords rt { font-size: 0.7em; opacity: 0.75; }
+
+/* ── Legend ── */
+#legend {
+  display: flex;
+  gap: 1.6rem;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+}
+
+.leg-k { color: #2471a3; }
+.leg-n { color: #b85000; }
+.leg-m { color: #6c3097; }
+
+/* ── Help ── */
+#help {
+  font-size: 0.54rem;
+  color: #9ab8cc;
+  letter-spacing: 0.2em;
+  text-align: center;
+  line-height: 2;
+}
+
+/* ════════════════════════════════════════════
+   SETTINGS OVERLAY
+   ════════════════════════════════════════════ */
+
+#settings-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(40,60,100,0.28);
+  z-index: 100;
+  backdrop-filter: blur(5px);
+  align-items: center;
+  justify-content: center;
+}
+
+#settings-overlay.open { display: flex; }
+
+#settings-panel {
+  background: linear-gradient(148deg, #f0f9ff 0%, #fffdf0 50%, #fff4f9 100%);
+  border-radius: 22px;
+  box-shadow: 0 10px 40px rgba(80,120,200,0.22), 0 2px 8px rgba(80,120,200,0.1);
+  padding: 1.8rem;
+  max-width: 490px;
+  width: 92%;
+  max-height: 85vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  scrollbar-width: thin;
+  scrollbar-color: #c0d8f0 transparent;
+}
+
+#settings-panel h2 {
+  font-size: 1rem;
+  color: #5b7fa6;
+  text-align: center;
+  letter-spacing: 0.35em;
+  font-weight: bold;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px dashed #d0e4f4;
+}
+
+.settings-section {
+  background: rgba(255,255,255,0.75);
+  border-radius: 14px;
+  padding: 1rem 1.1rem;
+  border: 1.5px solid #d0e8f8;
+}
+
+.settings-section.orange { border-color: #f0c8a0; background: rgba(255,252,245,0.75); }
+.settings-section.green  { border-color: #b0d8a0; background: rgba(245,255,242,0.75); }
+
+.settings-section h3 {
+  font-size: 0.78rem;
+  letter-spacing: 0.22em;
+  margin-bottom: 0.6rem;
+  font-weight: bold;
+}
+
+.settings-section h3.blue   { color: #2471a3; }
+.settings-section h3.orange { color: #b85000; }
+.settings-section h3.green  { color: #3a7020; }
+
+.settings-section p {
+  font-size: 0.62rem;
+  color: #7090a8;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.6rem;
+  line-height: 1.75;
+}
+
+/* File upload button (label styled as button) */
+label.file-btn {
+  display: block;
+  padding: 0.45rem 1rem;
+  background: #e8f4fd;
+  border: 1.5px dashed #90c0e0;
+  border-radius: 10px;
+  color: #3a70a0;
+  font-size: 0.68rem;
+  cursor: pointer;
+  letter-spacing: 0.12em;
+  text-align: center;
+  transition: background 0.2s, border-color 0.2s;
+  font-family: inherit;
+  margin-bottom: 0.5rem;
+}
+
+label.file-btn:hover { background: #d4ecf8; border-color: #5a9fd8; }
+label.file-btn.orange { background: #fdf0e4; border-color: #e09060; color: #a04820; }
+label.file-btn.orange:hover { background: #f8e4d0; border-color: #c06030; }
+
+input[type="file"] { display: none; }
+
+textarea.vocab-input {
+  width: 100%;
+  min-height: 78px;
+  background: rgba(255,255,255,0.9);
+  border: 1.5px solid #c0d8ee;
+  border-radius: 10px;
+  padding: 0.5rem 0.7rem;
+  font-family: inherit;
+  font-size: 0.65rem;
+  color: #2a3a4c;
+  resize: vertical;
+  letter-spacing: 0.05em;
+  line-height: 1.7;
+  transition: border-color 0.2s;
+}
+
+textarea.vocab-input:focus {
+  outline: none;
+  border-color: #5a9fd8;
+  box-shadow: 0 0 0 2px rgba(90,159,216,0.15);
+}
+
+textarea.vocab-input.orange { border-color: #e0b080; }
+textarea.vocab-input.orange:focus { border-color: #c07030; box-shadow: 0 0 0 2px rgba(192,112,48,0.15); }
+
+#upload-status {
+  font-size: 0.62rem;
+  color: #40a060;
+  text-align: center;
+  letter-spacing: 0.18em;
+  min-height: 1.1em;
+  font-weight: bold;
+}
+
+.panel-btns {
+  display: flex;
+  gap: 0.8rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.apply-btn {
+  background: linear-gradient(135deg, #90d8b8, #78c8a0);
+  border: none;
+  color: #0c4028;
+  font-weight: bold;
+  padding: 0.62rem 2rem;
+  border-radius: 16px;
+  font-size: 0.82rem;
+  letter-spacing: 0.22em;
+  cursor: pointer;
+  box-shadow: 0 3px 12px rgba(60,160,100,0.22);
+  transition: transform 0.15s, box-shadow 0.15s, background 0.2s;
+  font-family: inherit;
+}
+
+.apply-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 5px 16px rgba(60,160,100,0.3);
+  background: linear-gradient(135deg, #78d0a8, #60c090);
+}
+
+.reset-btn {
+  background: none;
+  border: 1.5px solid #f0b8b8;
+  color: #c04040;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  padding: 0.45rem 1.2rem;
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s;
+}
+
+.reset-btn:hover { background: rgba(255,220,220,0.5); }
+
+.close-btn {
+  background: none;
+  border: 1.5px solid #d0b8e0;
+  color: #8040a8;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  padding: 0.45rem 1.4rem;
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s;
+}
+
+.close-btn:hover { background: rgba(220,200,240,0.5); }
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<div id="wrap">
+  <header>
+    <div class="title-jp">星と子狐の間で</div>
+    <div class="title-en">Between Stars and Little Fox</div>
+    <div class="title-authors">宮沢賢治 × 新美南吉</div>
+  </header>
+
+  <div id="poem"></div>
+
+  <div id="nav">
+    <div class="nav-row">
+      <button onclick="move(0,-1)" title="北へ">&#8593;</button>
+    </div>
+    <div class="nav-row">
+      <button onclick="move(-1,0)" title="西へ">&#8592;</button>
+      <button onclick="move(1,0)" title="東へ">&#8594;</button>
+    </div>
+    <div class="nav-row">
+      <button onclick="move(0,1)" title="南へ">&#8595;</button>
+    </div>
+    <button class="btn-jump" onclick="jump()">&#10024; ランダムへジャンプ &#10024;</button>
+    <button class="btn-settings" onclick="openSettings()">&#128196; テキストをかえる</button>
+  </div>
+
+  <div id="coords"></div>
+
+  <div id="legend">
+    <span class="leg-k">&#9632; <ruby>賢治<rt>けんじ</rt></ruby></span>
+    <span class="leg-n">&#9632; <ruby>南吉<rt>なんきち</rt></ruby></span>
+    <span class="leg-m">&#9632; <ruby>混合<rt>こんごう</rt></ruby></span>
+  </div>
+
+  <div id="help">
+    &#8592;&#8593;&#8595;&#8594; キーまたは WASD で<ruby>移動<rt>いどう</rt></ruby>　J キーでランダムジャンプ<br>
+    <ruby>出典<rt>しゅってん</rt></ruby>：<ruby>銀河鉄道<rt>ぎんがてつどう</rt></ruby>の<ruby>夜<rt>よる</rt></ruby>・<ruby>風<rt>かぜ</rt></ruby>の<ruby>又三郎<rt>またさぶろう</rt></ruby>・<ruby>雨<rt>あめ</rt></ruby>ニモマケズ・ごんぎつね・<ruby>手袋<rt>てぶくろ</rt></ruby>を<ruby>買<rt>か</rt></ruby>いに
+  </div>
+</div>
+
+<!-- ═══ SETTINGS OVERLAY ═══ -->
+<div id="settings-overlay" onclick="closeSettingsIfOutside(event)">
+  <div id="settings-panel">
+    <h2>&#127757; テキストせってい</h2>
+
+    <!-- Kenji slot -->
+    <div class="settings-section">
+      <h3 class="blue">&#9733; <ruby>宮沢賢治<rt>みやざわけんじ</rt></ruby>のことば</h3>
+      <p>テキストファイル（.txt）を<ruby>読<rt>よ</rt></ruby>み<ruby>込<rt>こ</rt></ruby>むか、<ruby>直接<rt>ちょくせつ</rt></ruby>ことばを<ruby>入力<rt>にゅうりょく</rt></ruby>してください。<br>
+         <ruby>句読点<rt>くとうてん</rt></ruby>や<ruby>改行<rt>かいぎょう</rt></ruby>でことばが<ruby>区切<rt>く</rt></ruby>られます。<ruby>複数<rt>ふくすう</rt></ruby>のファイルをいっしょに<ruby>選<rt>えら</rt></ruby>べます。</p>
+      <label class="file-btn" for="file-k">&#128196; ファイルをえらぶ（.txt）</label>
+      <input type="file" id="file-k" accept=".txt" multiple onchange="loadFile(event,'k')">
+      <textarea class="vocab-input" id="text-k" placeholder="または、ここにことばを書いてください。&#10;&#10;例：&#10;銀河鉄道の夜&#10;ジョバンニは星を見ていた&#10;風の野原をかけていく
+みんなのほんたうのさいわいのために"></textarea>
+    </div>
+
+    <!-- Nankichi slot -->
+    <div class="settings-section orange">
+      <h3 class="orange">&#9830; <ruby>新美南吉<rt>にいみなんきち</rt></ruby>のことば</h3>
+      <p>テキストファイル（.txt）を<ruby>読<rt>よ</rt></ruby>み<ruby>込<rt>こ</rt></ruby>むか、<ruby>直接<rt>ちょくせつ</rt></ruby>ことばを<ruby>入力<rt>にゅうりょく</rt></ruby>してください。</p>
+      <label class="file-btn orange" for="file-n">&#128196; ファイルをえらぶ（.txt）</label>
+      <input type="file" id="file-n" accept=".txt" multiple onchange="loadFile(event,'n')">
+      <textarea class="vocab-input orange" id="text-n" placeholder="または、ここにことばを書いてください。&#10;&#10;例：&#10;ごんぎつね&#10;ごんはいつも一人ぼっちだった&#10;手袋を買いに&#10;おまえだったのか くりをくれたのは"></textarea>
+    </div>
+
+    <div id="upload-status"></div>
+
+    <div class="panel-btns">
+      <button class="apply-btn" onclick="applyCustomText()">&#10003; はんえいする</button>
+      <button class="reset-btn" onclick="resetCustomText()">&#8635; もとにもどす</button>
+      <button class="close-btn" onclick="closeSettings()">とじる</button>
+    </div>
+
+    <div class="settings-section green">
+      <h3 class="green">&#128218; つかいかた</h3>
+      <p>&#9670; テキストファイル（.txt）を<ruby>読<rt>よ</rt></ruby>み<ruby>込<rt>こ</rt></ruby>むと、そのことばが<ruby>詩<rt>し</rt></ruby>に<ruby>使<rt>つか</rt></ruby>われます<br>
+         &#9670; <ruby>複数<rt>ふくすう</rt></ruby>のファイルをまとめてえらぶこともできます<br>
+         &#9670; テキストエリアに<ruby>直接<rt>ちょくせつ</rt></ruby>書いてもOKです<br>
+         &#9670;「はんえいする」ボタンをおすと<ruby>詩<rt>し</rt></ruby>が<ruby>新<rt>あたら</rt></ruby>しくなります<br>
+         &#9670;「もとにもどす」で<ruby>元<rt>もと</rt></ruby>のことばにかえります</p>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   SPARKLE ANIMATION  (pastel bubbles on light background)
+   ═══════════════════════════════════════════════════════════════ */
+
+(function () {
+  const cv = document.getElementById('canvas');
+  const cx = cv.getContext('2d');
+
+  function resize() { cv.width = innerWidth; cv.height = innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const PALETTES = [
+    [100, 178, 255],  // sky blue
+    [255, 160,  90],  // peach
+    [180, 120, 220],  // lavender
+    [ 90, 210, 150],  // mint
+    [255, 140, 165],  // rose
+    [255, 208,  70],  // sunny yellow
+    [130, 200, 215],  // teal
+    [200, 160, 255],  // lilac
+  ];
+
+  const SPARKS = Array.from({ length: 75 }, () => {
+    const [r, g, b] = PALETTES[Math.floor(Math.random() * PALETTES.length)];
+    return {
+      bx: Math.random(), by: Math.random(),
+      radius:  Math.random() * 3.5 + 1.2,
+      alpha:   Math.random() * 0.35 + 0.08,
+      phase:   Math.random() * Math.PI * 2,
+      pulse:   Math.random() * 0.0007 + 0.0002,
+      waveAmp: Math.random() * 0.018 + 0.005,
+      waveSpd: Math.random() * 0.00035 + 0.00010,
+      color:   [r, g, b],
+    };
+  });
+
+  function tick() {
+    const w = cv.width, h = cv.height;
+    const t = Date.now();
+    cx.clearRect(0, 0, w, h);
+
+    SPARKS.forEach(s => {
+      const a   = s.alpha * (0.55 + 0.45 * Math.sin(t * s.pulse + s.phase));
+      const px  = (s.bx + Math.sin(t * s.waveSpd + s.phase) * s.waveAmp) * w;
+      const py  = (s.by + Math.cos(t * s.waveSpd * 0.75 + s.phase * 1.3) * s.waveAmp * 0.8) * h;
+      const [r, g, b] = s.color;
+
+      // Soft glow halo
+      const grd = cx.createRadialGradient(px, py, 0, px, py, s.radius * 4);
+      grd.addColorStop(0, `rgba(${r},${g},${b},${a * 0.55})`);
+      grd.addColorStop(1, `rgba(${r},${g},${b},0)`);
+      cx.beginPath();
+      cx.arc(px, py, s.radius * 4, 0, Math.PI * 2);
+      cx.fillStyle = grd;
+      cx.fill();
+
+      // Core dot
+      cx.beginPath();
+      cx.arc(px, py, s.radius, 0, Math.PI * 2);
+      cx.fillStyle = `rgba(${r},${g},${b},${Math.min(1, a * 2.2)})`;
+      cx.fill();
+    });
+
+    requestAnimationFrame(tick);
+  }
+  tick();
+})();
+
+/* ═══════════════════════════════════════════════════════════════
+   SEEDED PRNG  (Mulberry32)
+   ═══════════════════════════════════════════════════════════════ */
+
+function mulberry32(seed) {
+  return () => {
+    seed = (seed + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(seed ^ (seed >>> 15), seed | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function rngFor(x, y) {
+  const seed = (Math.imul(x, 73856093) ^ Math.imul(y, 19349663) ^ 0xDEADBEEF) >>> 0;
+  const r    = mulberry32(seed);
+  return {
+    pick: arr => arr[Math.floor(r() * arr.length)],
+    int:  n   => Math.floor(r() * n),
+  };
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FURIGANA DICTIONARY  (longest key first at runtime)
+   ═══════════════════════════════════════════════════════════════ */
+
+const FURIGANA_RAW = {
+  // ── 4+ characters ──
+  '石炭袋':    'せきたんぶくろ',
+  '白鳥座':    'はくちょうざ',
+  '十字架':    'じゅうじか',
+  '又三郎':    'またさぶろう',
+  '天の川':    'あまのがわ',
+  'お月さま':   'おつきさま',
+  '追いかける':  'おいかける',
+  '忍び込む':   'しのびこむ',
+  '降り注ぐ':   'ふりそそぐ',
+  '見つめる':   'みつめる',
+  '揺らめく':   'ゆらめく',
+  '輝かしい':   'かがやかしい',
+  '恐ろしい':   'おそろしい',
+  '不思議な':   'ふしぎな',
+  '清らかな':   'きよらかな',
+  '柔らかい':   'やわらかい',
+  '暖かい':    'あたたかい',
+  '悲しみ':    'かなしみ',
+  '優しさ':    'やさしさ',
+  '蒼白い':    'あおじろい',
+  '透明な':    'とうめいな',
+  '水色の':    'みずいろの',
+  '銀色の':    'ぎんいろの',
+  '真ん中':    'まんなか',
+  '小道':     'こみち',
+  '毛糸':     'けいと',
+  // ── 3 characters ──
+  '稲妻':     'いなずま',
+  '水晶':     'すいしょう',
+  '黎明':     'れいめい',
+  '牧場':     'ぼくじょう',
+  '列車':     'れっしゃ',
+  '草地':     'くさち',
+  '岸辺':     'きしべ',
+  '渡し場':    'わたしば',
+  '野原':     'のはら',
+  '夜明け':    'よあけ',
+  '銀河':     'ぎんが',
+  '宇宙':     'うちゅう',
+  '鉄道':     'てつどう',
+  '注文':     'ちゅうもん',
+  '料理':     'りょうりてん',
+  '世界':     'せかい',
+  '幸福':     'こうふく',
+  '一人':     'ひとり',
+  '手袋':     'てぶくろ',
+  '兵十':     'ひょうじゅう',
+  '村人':     'むらびと',
+  '子狐':     'こぎつね',
+  '小狐':     'こぎつね',
+  '届ける':    'とどける',
+  '秘密':     'ひみつ',
+  '自由':     'じゆう',
+  '運命':     'うんめい',
+  '時間':     'じかん',
+  '孤独':     'こどく',
+  '記憶':     'きおく',
+  '言葉':     'ことば',
+  '沈黙':     'ちんもく',
+  '別れ':     'わかれ',
+  '恐怖':     'きょうふ',
+  '水底':     'みなそこ',
+  // ── 2 characters ──
+  '忘れる':    'わすれる',
+  '感じる':    'かんじる',
+  '揺れる':    'ゆれる',
+  '流れる':    'ながれる',
+  '燃える':    'もえる',
+  '消える':    'きえる',
+  '生きる':    'いきる',
+  '震える':    'ふるえる',
+  '耐える':    'たえる',
+  '漂う':     'ただよう',
+  '透ける':    'すける',
+  '溶ける':    'とける',
+  '砕ける':    'くだける',
+  '跳ねる':    'はねる',
+  '隠れる':    'かくれる',
+  '佇む':     'たたずむ',
+  '愛する':    'あいする',
+  '考える':    'かんがえる',
+  '悲しい':    'かなしい',
+  '寂しい':    'さびしい',
+  '優しい':    'やさしい',
+  '冷たい':    'つめたい',
+  '涼しい':    'すずしい',
+  '静かな':    'しずかな',
+  '苦しい':    'くるしい',
+  '虚しい':    'むなしい',
+  '小さい':    'ちいさい',
+  '丸い':     'まるい',
+  '細い':     'ほそい',
+  '白い':     'しろい',
+  '赤い':     'あかい',
+  '青い':     'あおい',
+  '暗い':     'くらい',
+  '重い':     'おもい',
+  '遠い':     'とおい',
+  '深い':     'ふかい',
+  '美しい':    'うつくしい',
+  '澄んだ':    'すんだ',
+  '輝く':     'かがやく',
+  '悩む':     'なやむ',
+  '迷う':     'まよう',
+  '泣く':     'なく',
+  '笑う':     'わらう',
+  '想う':     'おもう',
+  '知る':     'しる',
+  '眠る':     'ねむる',
+  '歩く':     'あるく',
+  '沈む':     'しずむ',
+  '呼ぶ':     'よぶ',
+  '待つ':     'まつ',
+  '黙る':     'だまる',
+  '光る':     'ひかる',
+  '降る':     'ふる',
+  '走る':     'はしる',
+  '飛ぶ':     'とぶ',
+  '瞬く':     'またたく',
+  '咲く':     'さく',
+  '鳴る':     'なる',
+  '舞う':     'まう',
+  '響く':     'ひびく',
+  '凍る':     'こおる',
+  '拾う':     'ひろう',
+  '許す':     'ゆるす',
+  '守る':     'まもる',
+  '見る':     'みる',
+  '弾き':     'ひき',
+  '縁側':     'えんがわ',
+  '書斎':     'しょさい',
+  '海辺':     'うみべ',
+  '山路':     'やまじ',
+  '透明':     'とうめい',
+  '祭り':     'まつり',
+  // ── 1 character ──
+  '星':      'ほし',
+  '光':      'ひかり',
+  '風':      'かぜ',
+  '雨':      'あめ',
+  '草':      'くさ',
+  '川':      'かわ',
+  '岩':      'いわ',
+  '霜':      'しも',
+  '露':      'つゆ',
+  '雪':      'ゆき',
+  '氷':      'こおり',
+  '火':      'ひ',
+  '水':      'みず',
+  '空':      'そら',
+  '夢':      'ゆめ',
+  '心':      'こころ',
+  '魂':      'たましい',
+  '涙':      'なみだ',
+  '霧':      'きり',
+  '影':      'かげ',
+  '月':      'つき',
+  '夜':      'よる',
+  '道':      'みち',
+  '闇':      'やみ',
+  '岸':      'きし',
+  '石':      'いし',
+  '村':      'むら',
+  '秋':      'あき',
+  '森':      'もり',
+  '沼':      'ぬま',
+  '花':      'はな',
+  '木':      'き',
+  '山':      'やま',
+  '海':      'うみ',
+  '春':      'はる',
+  '夏':      'なつ',
+  '冬':      'ふゆ',
+  '丘':      'おか',
+  '家':      'いえ',
+  '命':      'いのち',
+  '愛':      'あい',
+  '罪':      'つみ',
+  '蠍':      'さそり',
+  '祭':      'まつり',
+  '奥':      'おく',
+  '町':      'まち',
+  '中':      'なか',
+  '庭':      'にわ',
+};
+
+// Pre-sort by key length descending for efficient ruby application
+const FURIGANA_SORTED = Object.entries(FURIGANA_RAW)
+  .sort((a, b) => b[0].length - a[0].length);
+
+/**
+ * Wrap kanji in text with <ruby> annotations.
+ * Uses a placeholder technique to avoid double-processing.
+ */
+function addRuby(rawText) {
+  // Escape HTML entities first (for safety with user-uploaded text)
+  let text = rawText
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  const ph = [];
+
+  for (const [kanji, reading] of FURIGANA_SORTED) {
+    const pat = kanji.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    text = text.replace(new RegExp(pat, 'g'), () => {
+      const i = ph.length;
+      ph.push(`<ruby>${kanji}<rt>${reading}</rt></ruby>`);
+      return `\x01${i}\x01`;
+    });
+  }
+
+  // Restore placeholders
+  return text.replace(/\x01(\d+)\x01/g, (_, i) => ph[+i]);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BASE VOCABULARY  —  宮沢賢治 (K)  ×  新美南吉 (N)
+   ═══════════════════════════════════════════════════════════════ */
+
+const K_BASE = {
+  subj: [
+    'ジョバンニ', 'カンパネルラ', '又三郎', 'ゴーシュ',
+    '風', '光', '雨', '星', '銀河', 'ザネリ', '雪童子',
+  ],
+  noun: [
+    '銀河', '星', '宇宙', '光', '風', '雨', '野原', '草',
+    '川', '岩', '天の川', '列車', '牧場',
+    '水晶', '霜', '露', '稲妻', '黎明', '雪', '氷',
+    '白鳥座', '十字架', '蠍', '夜明け',
+    '石炭袋', '火', '水', '空', '草地',
+  ],
+  place: [
+    '銀河の岸辺', '天の川の水底', '星の野原',
+    'イーハトーヴの丘', '銀河鉄道の中',
+    '青い森の奥', '銀河の渡し場', 'ケンタウル祭の夜',
+    '白い霧の向こう', '星明かりの牧場',
+  ],
+  verb: [
+    '光る', '流れる', '燃える', '揺れる', '降る',
+    '走る', '輝く', '透ける', '飛ぶ', '瞬く', '溶ける',
+    '咲く', '鳴る', '降り注ぐ', '舞う', '消える',
+    '響く', '揺らめく', '凍る', '砕ける',
+  ],
+  adj: [
+    '青い', '白い', '透明な', '冷たい', '遠い',
+    '澄んだ', '輝かしい', '水色の', '銀色の',
+    '涼しい', '清らかな', 'まぼろしの',
+    '蒼白い', '夢のような',
+  ],
+  phrase: [
+    'アメニモマケズ',
+    'カゼニモマケズ',
+    'ユキニモナツノアツサニモマケヌ',
+    'サウイフモノニワタシハナリタイ',
+    'みんなのほんたうのさいわいのために',
+    '世界がぜんたい幸福にならないうちは',
+    'どっどど　どどうど　どどうど　どどう',
+    '注文の多い料理店',
+    'セロ弾きのゴーシュ',
+    '雨ニモマケズ　風ニモマケズ',
+    'そらの野原をかけてゆく',
+    '銀河鉄道は夜の宇宙を走る',
+    'イーハトーヴのすきとおった風',
+    'ヒデリノトキハナミダヲナガシ',
+  ],
+};
+
+const N_BASE = {
+  subj: [
+    'ごん', '兵十', '子狐', 'お母さんぎつね',
+    '村人', '赤い鳥', 'でんでんむし', 'おじいさん', '加助',
+  ],
+  noun: [
+    'くり', 'まつたけ', 'いわし', '沼', '村', '秋', '野原',
+    '手袋', '雪', '川', 'ランプ', '花', '森',
+    'いたずら', '涙', '悲しみ', '優しさ', '命',
+    '毛糸', 'お月さま', '影', '夜', '空',
+  ],
+  place: [
+    '村のはずれ', '野原の真ん中', '沼のほとり',
+    '森の奥', '兵十の家のうら', '秋の野原',
+    '雪の町', '川のそば', '山の中の小道',
+  ],
+  verb: [
+    '走る', '忍び込む', '拾う', '泣く', '笑う',
+    '見る', '歩く', '待つ', '届ける', '許す',
+    '愛する', '守る', '消える', '跳ねる', '隠れる',
+  ],
+  adj: [
+    '小さい', '悲しい', 'かわいい', '寂しい', '暖かい',
+    '優しい', '丸い', '白い', '赤い', '細い',
+    '不思議な', '遠い', '柔らかい',
+  ],
+  phrase: [
+    'ごんぎつね',
+    'ごんはいつも一人ぼっちだった',
+    '手袋を買いに',
+    'でんでんむしの悲しみ',
+    'ごんはぐったりと目をつぶったまま',
+    'おまえだったのか　いつもくりをくれたのは',
+    'きつねはうれしくてうれしくて',
+    'お月さまはぼんやりとかすんでいました',
+    '兵十の家のうらに火がついた',
+  ],
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   USER-CUSTOMISABLE EXTRA VOCABULARY
+   ═══════════════════════════════════════════════════════════════ */
+
+let extraK = { subj: [], noun: [], verb: [], adj: [], phrase: [] };
+let extraN = { subj: [], noun: [], verb: [], adj: [], phrase: [] };
+
+/** Merge base vocab with user extras */
+function mergeVocab(base, extra) {
+  const out = {};
+  for (const key of Object.keys(base)) {
+    out[key] = (extra[key] && extra[key].length)
+      ? [...base[key], ...extra[key]]
+      : [...base[key]];
+  }
+  return out;
+}
+
+/** Parse raw text string into vocabulary chunks */
+function parseText(raw) {
+  const delim = /[。、！？「」『』（）【】〈〉…　\n\r\t ]+/;
+  const chunks = raw.split(delim)
+    .map(s => s.trim())
+    .filter(s => s.length >= 1 && s.length <= 30);
+  return {
+    phrases: chunks.filter(s => s.length  > 5),
+    words:   chunks.filter(s => s.length >= 1 && s.length <= 5),
+  };
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LINE GENERATORS
+   ═══════════════════════════════════════════════════════════════ */
+
+function kenjiLine(r) {
+  const Km = mergeVocab(K_BASE, extraK);
+  switch (r.int(13)) {
+    case  0: return `${r.pick(Km.place)}に${r.pick(Km.noun)}が${r.pick(Km.verb)}`;
+    case  1: return `${r.pick(Km.adj)}${r.pick(Km.noun)}は${r.pick(Km.verb)}`;
+    case  2: return `${r.pick(Km.noun)}の${r.pick(Km.noun)}が${r.pick(Km.verb)}`;
+    case  3: return r.pick(Km.phrase);
+    case  4: return `${r.pick(Km.subj)}は${r.pick(Km.place)}を${r.pick(Km.verb)}`;
+    case  5: return `${r.pick(Km.adj)}${r.pick(Km.noun)}と${r.pick(Km.adj)}${r.pick(Km.noun)}`;
+    case  6: return `${r.pick(Km.place)}で${r.pick(Km.noun)}が${r.pick(Km.verb)}`;
+    case  7: return `${r.pick(Km.noun)}は${r.pick(Km.adj)}光を${r.pick(Km.verb)}`;
+    case  8: return `${r.pick(Km.subj)}は${r.pick(Km.noun)}の中を${r.pick(Km.verb)}`;
+    case  9: return `${r.pick(Km.adj)}${r.pick(Km.noun)}が${r.pick(Km.verb)}`;
+    case 10: return `${r.pick(Km.noun)}よ、${r.pick(Km.noun)}よ、${r.pick(Km.verb)}`;
+    case 11: return `${r.pick(Km.subj)}は${r.pick(Km.adj)}${r.pick(Km.noun)}の夢を見る`;
+    case 12: return `${r.pick(Km.noun)}の中で${r.pick(Km.subj)}は${r.pick(Km.verb)}`;
+    default: return r.pick(Km.phrase);
+  }
+}
+
+function nankichiLine(r) {
+  const Nm = mergeVocab(N_BASE, extraN);
+  switch (r.int(13)) {
+    case  0: return `${r.pick(Nm.subj)}は${r.pick(Nm.place)}を${r.pick(Nm.verb)}`;
+    case  1: return `${r.pick(Nm.adj)}${r.pick(Nm.noun)}の${r.pick(Nm.place)}`;
+    case  2: return r.pick(Nm.phrase);
+    case  3: return `${r.pick(Nm.subj)}の${r.pick(Nm.noun)}が${r.pick(Nm.verb)}`;
+    case  4: return `${r.pick(Nm.adj)}${r.pick(Nm.noun)}は${r.pick(Nm.verb)}`;
+    case  5: return `${r.pick(Nm.noun)}と${r.pick(Nm.noun)}が${r.pick(Nm.verb)}`;
+    case  6: return `${r.pick(Nm.place)}で${r.pick(Nm.subj)}は${r.pick(Nm.verb)}`;
+    case  7: return `${r.pick(Nm.subj)}は${r.pick(Nm.noun)}を${r.pick(Nm.verb)}`;
+    case  8: return `${r.pick(Nm.noun)}の中で${r.pick(Nm.subj)}は${r.pick(Nm.verb)}`;
+    case  9: return `${r.pick(Nm.adj)}${r.pick(Nm.noun)}——${r.pick(Nm.adj)}${r.pick(Nm.noun)}`;
+    case 10: return `${r.pick(Nm.subj)}は${r.pick(Nm.noun)}の${r.pick(Nm.noun)}を知る`;
+    case 11: return `${r.pick(Nm.noun)}よ、${r.pick(Nm.subj)}よ`;
+    case 12: return `${r.pick(Nm.adj)}${r.pick(Nm.noun)}に${r.pick(Nm.subj)}は${r.pick(Nm.verb)}`;
+    default: return r.pick(Nm.phrase);
+  }
+}
+
+function mixedLine(r) {
+  const Km = mergeVocab(K_BASE, extraK);
+  const Nm = mergeVocab(N_BASE, extraN);
+  switch (r.int(10)) {
+    case 0: return `${r.pick(Nm.noun)}の中で${r.pick(Km.noun)}が${r.pick(Km.verb)}`;
+    case 1: return `${r.pick(Km.adj)}${r.pick(Nm.noun)}に${r.pick(Nm.verb)}`;
+    case 2: return `${r.pick(Nm.subj)}は${r.pick(Km.noun)}の${r.pick(Nm.adj)}夢を見る`;
+    case 3: return `${r.pick(Km.place)}で${r.pick(Nm.subj)}は${r.pick(Nm.verb)}`;
+    case 4: return `${r.pick(Nm.noun)}と${r.pick(Km.noun)}が${r.pick(Km.verb)}`;
+    case 5: return `${r.pick(Km.adj)}${r.pick(Nm.noun)}は${r.pick(Km.verb)}`;
+    case 6: return `${r.pick(Nm.place)}から${r.pick(Km.noun)}が${r.pick(Km.verb)}`;
+    case 7: return `${r.pick(Km.noun)}の${r.pick(Nm.adj)}${r.pick(Nm.noun)}`;
+    case 8: return `${r.pick(Nm.subj)}は${r.pick(Km.place)}を${r.pick(Nm.verb)}`;
+    case 9: return `${r.pick(Km.noun)}は${r.pick(Nm.noun)}の中に${r.pick(Km.verb)}`;
+    default: return `${r.pick(Nm.noun)}と${r.pick(Km.noun)}`;
+  }
+}
+
+function closingLine(r) {
+  const Km = mergeVocab(K_BASE, extraK);
+  const Nm = mergeVocab(N_BASE, extraN);
+  switch (r.int(10)) {
+    case 0: return `${r.pick(Nm.noun)} ─ ${r.pick(Km.noun)}`;
+    case 1: return `${r.pick(Km.adj)}${r.pick(Nm.noun)}`;
+    case 2: return `${r.pick(Nm.adj)}${r.pick(Km.noun)}`;
+    case 3: return `${r.pick(Km.noun)}よ、${r.pick(Nm.noun)}よ`;
+    case 4: return `静かな${r.pick(Km.noun)}の中で`;
+    case 5: return `${r.pick(Km.adj)}${r.pick(Nm.adj)}夜`;
+    case 6: return `${r.pick(Km.noun)}の${r.pick(Nm.noun)}`;
+    case 7: return `${r.pick(Nm.noun)}、${r.pick(Km.noun)}`;
+    case 8: return `${r.pick(Km.adj)}${r.pick(Km.noun)}と${r.pick(Nm.adj)}${r.pick(Nm.noun)}`;
+    case 9: return `${r.pick(Nm.noun)} ── ${r.pick(Km.noun)} ── ${r.pick(Nm.noun)}`;
+    default: return `${r.pick(Nm.noun)} ─ ${r.pick(Km.noun)}`;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STANZA STRUCTURES
+   ═══════════════════════════════════════════════════════════════ */
+
+const STRUCTURES = [
+  ['k','n','m','c'],
+  ['n','k','m','c'],
+  ['m','k','n','c'],
+  ['k','m','n','c'],
+  ['n','m','k','c'],
+  ['k','n','n','c'],
+  ['n','k','k','c'],
+  ['m','n','k','c'],
+  ['k','k','n','c'],
+  ['n','n','k','c'],
+];
+
+function makeStanza(x, y) {
+  const r      = rngFor(x, y);
+  const struct = STRUCTURES[r.int(STRUCTURES.length)];
+  return struct.map(type => {
+    let text;
+    switch (type) {
+      case 'k': text = kenjiLine(r);    break;
+      case 'n': text = nankichiLine(r); break;
+      case 'm': text = mixedLine(r);    break;
+      case 'c': text = closingLine(r);  break;
+    }
+    return { text, type };
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   NAVIGATION
+   ═══════════════════════════════════════════════════════════════ */
+
+const W = 14400;   // 賢治軸
+const H = 14400;   // 南吉軸
+
+let px = 7200, py = 7200;
+
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+function move(dx, dy) {
+  px = clamp(px + dx, 0, W - 1);
+  py = clamp(py + dy, 0, H - 1);
+  render();
+}
+
+function jump() {
+  px = Math.floor(Math.random() * W);
+  py = Math.floor(Math.random() * H);
+  render();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RENDER
+   ═══════════════════════════════════════════════════════════════ */
+
+function render() {
+  const stanza = makeStanza(px, py);
+  const div    = document.getElementById('poem');
+
+  // Fade out
+  [...div.children].forEach(c => {
+    c.classList.remove('show');
+    c.style.transitionDuration = '0.18s';
+  });
+
+  setTimeout(() => {
+    div.innerHTML = '';
+    stanza.forEach(({ text, type }, i) => {
+      const el       = document.createElement('div');
+      el.className   = `line ${type}`;
+      el.innerHTML   = addRuby(text);
+      div.appendChild(el);
+      setTimeout(() => el.classList.add('show'), i * 145 + 55);
+    });
+  }, 200);
+
+  // Coordinate display
+  const nth = py * W + px + 1;
+  document.getElementById('coords').innerHTML =
+    `<ruby>賢治<rt>けんじ</rt></ruby> ${String(px).padStart(5,'0')} ` +
+    `× <ruby>南吉<rt>なんきち</rt></ruby> ${String(py).padStart(5,'0')}<br>` +
+    `${(W * H).toLocaleString('ja-JP')} <ruby>篇<rt>へん</rt></ruby>中の ` +
+    `第 ${nth.toLocaleString('ja-JP')} <ruby>篇<rt>へん</rt></ruby>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SETTINGS PANEL
+   ═══════════════════════════════════════════════════════════════ */
+
+function openSettings() {
+  document.getElementById('settings-overlay').classList.add('open');
+}
+
+function closeSettings() {
+  document.getElementById('settings-overlay').classList.remove('open');
+}
+
+function closeSettingsIfOutside(e) {
+  if (e.target === document.getElementById('settings-overlay')) closeSettings();
+}
+
+/** Read file(s) into the corresponding textarea */
+function loadFile(event, slot) {
+  const files    = Array.from(event.target.files);
+  if (!files.length) return;
+
+  const textarea = document.getElementById(`text-${slot}`);
+  const statusEl = document.getElementById('upload-status');
+  statusEl.textContent = '読み込み中…';
+
+  let loaded   = 0;
+  let combined = textarea.value ? textarea.value + '\n' : '';
+
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      combined += e.target.result + '\n';
+      loaded++;
+      if (loaded === files.length) {
+        textarea.value = combined.trim();
+        statusEl.style.color = '#40a060';
+        statusEl.textContent =
+          `✓ ${files.length}件のファイルを読み込みました`;
+        setTimeout(() => { statusEl.textContent = ''; }, 4000);
+      }
+    };
+    reader.onerror = () => {
+      statusEl.style.color = '#c04040';
+      statusEl.textContent = 'ファイルの読み込みに失敗しました';
+    };
+    reader.readAsText(file, 'UTF-8');
+  });
+}
+
+/** Parse textareas and inject into extraK / extraN, then re-render */
+function applyCustomText() {
+  const rawK     = document.getElementById('text-k').value.trim();
+  const rawN     = document.getElementById('text-n').value.trim();
+  const statusEl = document.getElementById('upload-status');
+
+  if (rawK) {
+    const { phrases, words } = parseText(rawK);
+    extraK = {
+      subj:   [],
+      noun:   words,
+      verb:   [],
+      adj:    [],
+      phrase: phrases,
+    };
+  } else {
+    extraK = { subj: [], noun: [], verb: [], adj: [], phrase: [] };
+  }
+
+  if (rawN) {
+    const { phrases, words } = parseText(rawN);
+    extraN = {
+      subj:   [],
+      noun:   words,
+      verb:   [],
+      adj:    [],
+      phrase: phrases,
+    };
+  } else {
+    extraN = { subj: [], noun: [], verb: [], adj: [], phrase: [] };
+  }
+
+  statusEl.style.color   = '#40a060';
+  statusEl.textContent   = '✨ テキストを反映しました！';
+  setTimeout(() => {
+    statusEl.textContent = '';
+    closeSettings();
+    render();
+  }, 900);
+}
+
+/** Reset extra vocab back to defaults */
+function resetCustomText() {
+  extraK = { subj: [], noun: [], verb: [], adj: [], phrase: [] };
+  extraN = { subj: [], noun: [], verb: [], adj: [], phrase: [] };
+
+  document.getElementById('text-k').value = '';
+  document.getElementById('text-n').value = '';
+
+  const statusEl         = document.getElementById('upload-status');
+  statusEl.style.color   = '#7070c0';
+  statusEl.textContent   = '元のことばにもどしました';
+  setTimeout(() => {
+    statusEl.textContent = '';
+    closeSettings();
+    render();
+  }, 900);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   KEYBOARD NAVIGATION
+   ═══════════════════════════════════════════════════════════════ */
+
+document.addEventListener('keydown', e => {
+  // Ignore key events while typing in the settings panel
+  if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+
+  switch (e.key) {
+    case 'ArrowLeft':  case 'a': case 'A': e.preventDefault(); move(-1,  0); break;
+    case 'ArrowRight': case 'd': case 'D': e.preventDefault(); move( 1,  0); break;
+    case 'ArrowUp':    case 'w': case 'W': e.preventDefault(); move( 0, -1); break;
+    case 'ArrowDown':  case 's': case 'S': e.preventDefault(); move( 0,  1); break;
+    case 'j':          case 'J':           jump();                            break;
+  }
+});
+
+/* ── boot ── */
+render();
+</script>
+</body>
+</html>
