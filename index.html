@@ -4,9 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>星と子狐の間で / Between Stars and Little Fox</title>
-<style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-
 <!--
 //  Copyright (c) 2012, 2020 Nick Montfort and Stephanie Strickland
 //  All rights reserved.
@@ -47,9 +44,11 @@
 // This license, of course, is not just included here for purposes of
 // commentary; it applies to this edition of the text as well.
 //
-  Redistributed by Takehiro Hashimoto 2026
+Redistributed by Takehiro Hashimoto 2026
 -->
-  
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
 html, body {
   width: 100%; height: 100%;
   overflow: hidden;
@@ -459,6 +458,43 @@ textarea.vocab-input.orange:focus { border-color: #c07030; box-shadow: 0 0 0 2px
 }
 
 .close-btn:hover { background: rgba(220,200,240,0.5); }
+
+/* ── "あたらしいしをつくる" button ── */
+.new-poem-btn {
+  background: linear-gradient(135deg, #f4c8ee, #d4a0f4);
+  border: none;
+  color: #500a68;
+  font-weight: bold;
+  padding: 0.68rem 1.6rem;
+  border-radius: 16px;
+  font-size: 0.85rem;
+  letter-spacing: 0.2em;
+  cursor: pointer;
+  box-shadow: 0 3px 14px rgba(160,70,210,0.22);
+  transition: transform 0.15s, box-shadow 0.15s, background 0.2s;
+  font-family: inherit;
+  width: 100%;
+}
+
+.new-poem-btn:hover {
+  transform: scale(1.04);
+  box-shadow: 0 5px 18px rgba(160,70,210,0.32);
+  background: linear-gradient(135deg, #eaaae0, #c080e8);
+}
+
+/* ── Custom-only mode badge ── */
+#mode-badge {
+  display: none;
+  font-size: 0.58rem;
+  letter-spacing: 0.2em;
+  color: #7010a0;
+  background: rgba(236,210,255,0.82);
+  border: 1px solid #c890e8;
+  border-radius: 20px;
+  padding: 0.18rem 0.8rem;
+  margin-top: 0.15rem;
+}
+#mode-badge.show { display: inline-block; }
 </style>
 </head>
 <body>
@@ -469,7 +505,8 @@ textarea.vocab-input.orange:focus { border-color: #c07030; box-shadow: 0 0 0 2px
   <header>
     <div class="title-jp">星と子狐の間で</div>
     <div class="title-en">Between Stars and Little Fox</div>
-    <div class="title-authors">宮沢賢治 × 新美南吉</div>
+    <div class="title-authors" id="title-authors">宮沢賢治 × 新美南吉</div>
+    <div id="mode-badge">&#9670; カスタムテキストのみ</div>
   </header>
 
   <div id="poem"></div>
@@ -530,18 +567,24 @@ textarea.vocab-input.orange:focus { border-color: #c07030; box-shadow: 0 0 0 2px
 
     <div id="upload-status"></div>
 
+    <!-- まぜてはんえい + もとにもどす + とじる -->
     <div class="panel-btns">
-      <button class="apply-btn" onclick="applyCustomText()">&#10003; はんえいする</button>
+      <button class="apply-btn" onclick="applyCustomText()">&#10003; まぜてはんえい</button>
       <button class="reset-btn" onclick="resetCustomText()">&#8635; もとにもどす</button>
       <button class="close-btn" onclick="closeSettings()">とじる</button>
     </div>
 
+    <!-- あたらしいしをつくる (custom-only mode) -->
+    <button class="new-poem-btn" onclick="applyCustomOnly()">
+      &#10024; あたらしいしをつくる &#10024;
+    </button>
+
     <div class="settings-section green">
       <h3 class="green">&#128218; つかいかた</h3>
-      <p>&#9670; テキストファイル（.txt）を<ruby>読<rt>よ</rt></ruby>み<ruby>込<rt>こ</rt></ruby>むと、そのことばが<ruby>詩<rt>し</rt></ruby>に<ruby>使<rt>つか</rt></ruby>われます<br>
+      <p>&#9670; テキストファイル（.txt）を<ruby>読<rt>よ</rt></ruby>み<ruby>込<rt>こ</rt></ruby>むか、テキストエリアに<ruby>直接<rt>ちょくせつ</rt></ruby>書いてください<br>
          &#9670; <ruby>複数<rt>ふくすう</rt></ruby>のファイルをまとめてえらぶこともできます<br>
-         &#9670; テキストエリアに<ruby>直接<rt>ちょくせつ</rt></ruby>書いてもOKです<br>
-         &#9670;「はんえいする」ボタンをおすと<ruby>詩<rt>し</rt></ruby>が<ruby>新<rt>あたら</rt></ruby>しくなります<br>
+         &#9670;「まぜてはんえい」：<ruby>元<rt>もと</rt></ruby>のことば＋あなたのことばを<ruby>混<rt>ま</rt></ruby>ぜて<ruby>使<rt>つか</rt></ruby>います<br>
+         &#9670;「<ruby>あたらしいしをつくる<rt></rt></ruby>」：<ruby>賢治<rt>けんじ</rt></ruby>・<ruby>南吉<rt>なんきち</rt></ruby>のことばを<ruby>消<rt>け</rt></ruby>して、あなたのことばだけで<ruby>詩<rt>し</rt></ruby>を<ruby>作<rt>つく</rt></ruby>ります<br>
          &#9670;「もとにもどす」で<ruby>元<rt>もと</rt></ruby>のことばにかえります</p>
     </div>
   </div>
@@ -959,15 +1002,38 @@ const N_BASE = {
 let extraK = { subj: [], noun: [], verb: [], adj: [], phrase: [] };
 let extraN = { subj: [], noun: [], verb: [], adj: [], phrase: [] };
 
-/** Merge base vocab with user extras */
+// When true: use ONLY extra vocab (base Kenji/Nankichi words are suppressed)
+let useCustomOnly = false;
+
+/**
+ * Merge base vocab with user extras.
+ * If useCustomOnly=true, returns extra vocab for each category,
+ * falling back to base only when that category has no extra entries.
+ */
 function mergeVocab(base, extra) {
   const out = {};
   for (const key of Object.keys(base)) {
-    out[key] = (extra[key] && extra[key].length)
-      ? [...base[key], ...extra[key]]
-      : [...base[key]];
+    const hasExtra = extra[key] && extra[key].length > 0;
+    if (useCustomOnly) {
+      out[key] = hasExtra ? [...extra[key]] : [...base[key]];
+    } else {
+      out[key] = hasExtra ? [...base[key], ...extra[key]] : [...base[key]];
+    }
   }
   return out;
+}
+
+/** Show/hide the custom-only mode badge in the header */
+function updateModeDisplay() {
+  const badge   = document.getElementById('mode-badge');
+  const authors = document.getElementById('title-authors');
+  if (useCustomOnly) {
+    badge.classList.add('show');
+    authors.style.opacity = '0.35';
+  } else {
+    badge.classList.remove('show');
+    authors.style.opacity = '';
+  }
 }
 
 /** Parse raw text string into vocabulary chunks */
@@ -1200,7 +1266,7 @@ function loadFile(event, slot) {
   });
 }
 
-/** Parse textareas and inject into extraK / extraN, then re-render */
+/** Parse textareas and inject into extraK / extraN (mixed mode), then re-render */
 function applyCustomText() {
   const rawK     = document.getElementById('text-k').value.trim();
   const rawN     = document.getElementById('text-n').value.trim();
@@ -1208,32 +1274,24 @@ function applyCustomText() {
 
   if (rawK) {
     const { phrases, words } = parseText(rawK);
-    extraK = {
-      subj:   [],
-      noun:   words,
-      verb:   [],
-      adj:    [],
-      phrase: phrases,
-    };
+    extraK = { subj: [], noun: words, verb: [], adj: [], phrase: phrases };
   } else {
     extraK = { subj: [], noun: [], verb: [], adj: [], phrase: [] };
   }
 
   if (rawN) {
     const { phrases, words } = parseText(rawN);
-    extraN = {
-      subj:   [],
-      noun:   words,
-      verb:   [],
-      adj:    [],
-      phrase: phrases,
-    };
+    extraN = { subj: [], noun: words, verb: [], adj: [], phrase: phrases };
   } else {
     extraN = { subj: [], noun: [], verb: [], adj: [], phrase: [] };
   }
 
-  statusEl.style.color   = '#40a060';
-  statusEl.textContent   = '✨ テキストを反映しました！';
+  // Mixed mode: base + custom together
+  useCustomOnly = false;
+  updateModeDisplay();
+
+  statusEl.style.color = '#40a060';
+  statusEl.textContent = '&#10003; まぜてはんえいしました！';
   setTimeout(() => {
     statusEl.textContent = '';
     closeSettings();
@@ -1241,17 +1299,62 @@ function applyCustomText() {
   }, 900);
 }
 
-/** Reset extra vocab back to defaults */
+/**
+ * Use ONLY the user-supplied text — base Kenji/Nankichi vocabulary is suppressed.
+ * Falls back to base only for categories the user text cannot fill (subj, verb, adj).
+ */
+function applyCustomOnly() {
+  const rawK     = document.getElementById('text-k').value.trim();
+  const rawN     = document.getElementById('text-n').value.trim();
+  const statusEl = document.getElementById('upload-status');
+
+  if (!rawK && !rawN) {
+    statusEl.style.color = '#c04040';
+    statusEl.textContent = 'テキストを入力してください';
+    setTimeout(() => { statusEl.textContent = ''; }, 3500);
+    return;
+  }
+
+  if (rawK) {
+    const { phrases, words } = parseText(rawK);
+    extraK = { subj: [], noun: words, verb: [], adj: [], phrase: phrases };
+  } else {
+    extraK = { subj: [], noun: [], verb: [], adj: [], phrase: [] };
+  }
+
+  if (rawN) {
+    const { phrases, words } = parseText(rawN);
+    extraN = { subj: [], noun: words, verb: [], adj: [], phrase: phrases };
+  } else {
+    extraN = { subj: [], noun: [], verb: [], adj: [], phrase: [] };
+  }
+
+  // Custom-only mode: suppress base vocabulary where custom is available
+  useCustomOnly = true;
+  updateModeDisplay();
+
+  statusEl.style.color = '#9020c0';
+  statusEl.textContent = '&#10024; あたらしいことばで詩を作ります！';
+  setTimeout(() => {
+    statusEl.textContent = '';
+    closeSettings();
+    render();
+  }, 900);
+}
+
+/** Reset extra vocab and return to base Kenji/Nankichi words */
 function resetCustomText() {
   extraK = { subj: [], noun: [], verb: [], adj: [], phrase: [] };
   extraN = { subj: [], noun: [], verb: [], adj: [], phrase: [] };
+  useCustomOnly = false;
+  updateModeDisplay();
 
   document.getElementById('text-k').value = '';
   document.getElementById('text-n').value = '';
 
-  const statusEl         = document.getElementById('upload-status');
-  statusEl.style.color   = '#7070c0';
-  statusEl.textContent   = '元のことばにもどしました';
+  const statusEl       = document.getElementById('upload-status');
+  statusEl.style.color = '#7070c0';
+  statusEl.textContent = '元のことばにもどしました';
   setTimeout(() => {
     statusEl.textContent = '';
     closeSettings();
