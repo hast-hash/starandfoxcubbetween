@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>星と子狐の間で / Between Stars and Little Fox</title>
+<title>ほしとこぎつねさん</title>
 <!--
 //  Copyright (c) 2012, 2020 Nick Montfort and Stephanie Strickland
 //  All rights reserved.
@@ -503,8 +503,8 @@ textarea.vocab-input.orange:focus { border-color: #c07030; box-shadow: 0 0 0 2px
 
 <div id="wrap">
   <header>
-    <div class="title-jp">星と子狐の間で</div>
     <div class="title-en">Between Stars and Little Fox</div>
+    <div class="title-jp">ほしとこぎつねさん</div>
     <div class="title-authors" id="title-authors">宮沢賢治 × 新美南吉</div>
     <div id="mode-badge">&#9670; カスタムテキストのみ</div>
   </header>
@@ -1212,9 +1212,10 @@ function render() {
   const nth = py * W + px + 1;
   document.getElementById('coords').innerHTML =
     `<ruby>賢治<rt>けんじ</rt></ruby> ${String(px).padStart(5,'0')} ` +
-    `× <ruby>南吉<rt>なんきち</rt></ruby> ${String(py).padStart(5,'0')}<br>` +
+    `× <ruby>南吉<rt>なんきち</rt></ruby> ${String(py).padStart(5,'0')} ` +
     `${(W * H).toLocaleString('ja-JP')} <ruby>篇<rt>へん</rt></ruby>中の ` +
-    `第 ${nth.toLocaleString('ja-JP')} <ruby>篇<rt>へん</rt></ruby>`;
+    `第 ${nth.toLocaleString('ja-JP')} <ruby>篇<rt>へん</rt></ruby>`+
+    `<br>Redistributed by Takehiro Hashimoto, 2026.`;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1382,5 +1383,6 @@ document.addEventListener('keydown', e => {
 /* ── boot ── */
 render();
 </script>
+
 </body>
 </html>
