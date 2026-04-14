@@ -459,6 +459,39 @@ textarea.vocab-input.orange:focus { border-color: #c07030; box-shadow: 0 0 0 2px
 
 .close-btn:hover { background: rgba(220,200,240,0.5); }
 
+/* ── Author name input ── */
+.author-name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.65rem;
+  color: #5a7090;
+  letter-spacing: 0.08em;
+}
+
+input.author-input {
+  flex: 1;
+  padding: 0.3rem 0.6rem;
+  border: 1.5px solid #c0d8ee;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.72rem;
+  color: #2a3a4c;
+  background: rgba(255,255,255,0.9);
+  letter-spacing: 0.05em;
+  transition: border-color 0.2s;
+}
+
+input.author-input:focus {
+  outline: none;
+  border-color: #5a9fd8;
+  box-shadow: 0 0 0 2px rgba(90,159,216,0.15);
+}
+
+input.author-input.orange { border-color: #e0b080; }
+input.author-input.orange:focus { border-color: #c07030; box-shadow: 0 0 0 2px rgba(192,112,48,0.15); }
+
 /* ── "あたらしいしをつくる" button ── */
 .new-poem-btn {
   background: linear-gradient(135deg, #f4c8ee, #d4a0f4);
@@ -529,8 +562,8 @@ textarea.vocab-input.orange:focus { border-color: #c07030; box-shadow: 0 0 0 2px
   <div id="coords"></div>
 
   <div id="legend">
-    <span class="leg-k">&#9632; <ruby>賢治<rt>けんじ</rt></ruby></span>
-    <span class="leg-n">&#9632; <ruby>南吉<rt>なんきち</rt></ruby></span>
+    <span class="leg-k" id="leg-k-span">&#9632; <ruby>賢治<rt>けんじ</rt></ruby></span>
+    <span class="leg-n" id="leg-n-span">&#9632; <ruby>南吉<rt>なんきち</rt></ruby></span>
     <span class="leg-m">&#9632; <ruby>混合<rt>こんごう</rt></ruby></span>
   </div>
 
@@ -547,7 +580,11 @@ textarea.vocab-input.orange:focus { border-color: #c07030; box-shadow: 0 0 0 2px
 
     <!-- Kenji slot -->
     <div class="settings-section">
-      <h3 class="blue">&#9733; <ruby>宮沢賢治<rt>みやざわけんじ</rt></ruby>のことば</h3>
+      <h3 class="blue" id="settings-h3-k">&#9733; <ruby>宮沢賢治<rt>みやざわけんじ</rt></ruby>のことば</h3>
+      <div class="author-name-row">
+        <label for="author-k">&#9998; 作者名：</label>
+        <input type="text" id="author-k" class="author-input" value="宮沢賢治" placeholder="作者名（例：宮沢賢治）">
+      </div>
       <p>テキストファイル（.txt）を<ruby>読<rt>よ</rt></ruby>み<ruby>込<rt>こ</rt></ruby>むか、<ruby>直接<rt>ちょくせつ</rt></ruby>ことばを<ruby>入力<rt>にゅうりょく</rt></ruby>してください。<br>
          <ruby>句読点<rt>くとうてん</rt></ruby>や<ruby>改行<rt>かいぎょう</rt></ruby>でことばが<ruby>区切<rt>く</rt></ruby>られます。<ruby>複数<rt>ふくすう</rt></ruby>のファイルをいっしょに<ruby>選<rt>えら</rt></ruby>べます。</p>
       <label class="file-btn" for="file-k">&#128196; ファイルをえらぶ（.txt）</label>
@@ -558,7 +595,11 @@ textarea.vocab-input.orange:focus { border-color: #c07030; box-shadow: 0 0 0 2px
 
     <!-- Nankichi slot -->
     <div class="settings-section orange">
-      <h3 class="orange">&#9830; <ruby>新美南吉<rt>にいみなんきち</rt></ruby>のことば</h3>
+      <h3 class="orange" id="settings-h3-n">&#9830; <ruby>新美南吉<rt>にいみなんきち</rt></ruby>のことば</h3>
+      <div class="author-name-row">
+        <label for="author-n">&#9998; 作者名：</label>
+        <input type="text" id="author-n" class="author-input orange" value="新美南吉" placeholder="作者名（例：新美南吉）">
+      </div>
       <p>テキストファイル（.txt）を<ruby>読<rt>よ</rt></ruby>み<ruby>込<rt>こ</rt></ruby>むか、<ruby>直接<rt>ちょくせつ</rt></ruby>ことばを<ruby>入力<rt>にゅうりょく</rt></ruby>してください。</p>
       <label class="file-btn orange" for="file-n">&#128196; ファイルをえらぶ（.txt）</label>
       <input type="file" id="file-n" accept=".txt" multiple onchange="loadFile(event,'n')">
@@ -1005,18 +1046,48 @@ let extraN = { subj: [], noun: [], verb: [], adj: [], phrase: [] };
 // When true: use ONLY extra vocab (base Kenji/Nankichi words are suppressed)
 let useCustomOnly = false;
 
+// Author display names (updated from settings inputs)
+let authorK = '宮沢賢治';
+let authorN = '新美南吉';
+
+/** Read author name inputs and update all header/legend displays */
+function updateAuthorDisplay() {
+  const kVal = document.getElementById('author-k').value.trim();
+  const nVal = document.getElementById('author-n').value.trim();
+  authorK = kVal || '宮沢賢治';
+  authorN = nVal || '新美南吉';
+
+  // Update title-authors (text only; mode-badge is a sibling element)
+  document.getElementById('title-authors').textContent = `${authorK} × ${authorN}`;
+
+  // Update legend spans
+  document.getElementById('leg-k-span').innerHTML = `&#9632; ${authorK}`;
+  document.getElementById('leg-n-span').innerHTML = `&#9632; ${authorN}`;
+
+  // Update settings section headers
+  document.getElementById('settings-h3-k').innerHTML = `&#9733; ${authorK}のことば`;
+  document.getElementById('settings-h3-n').innerHTML = `&#9830; ${authorN}のことば`;
+}
+
 /**
  * Merge base vocab with user extras.
- * If useCustomOnly=true, returns extra vocab for each category,
- * falling back to base only when that category has no extra entries.
+ * If useCustomOnly=true, base corpus is completely suppressed —
+ * every category is filled from user words, with NO fallback to base.
+ * Empty categories fall back to all user words combined.
  */
 function mergeVocab(base, extra) {
   const out = {};
-  for (const key of Object.keys(base)) {
-    const hasExtra = extra[key] && extra[key].length > 0;
-    if (useCustomOnly) {
-      out[key] = hasExtra ? [...extra[key]] : [...base[key]];
-    } else {
+  if (useCustomOnly) {
+    // Gather every user-supplied item across all categories as a catch-all pool
+    const allUserItems = Object.values(extra).flat();
+    for (const key of Object.keys(base)) {
+      const pool = (extra[key] && extra[key].length > 0) ? extra[key] : allUserItems;
+      // Only fall back to base as absolute last resort (empty input)
+      out[key] = pool.length > 0 ? [...pool] : [...base[key]];
+    }
+  } else {
+    for (const key of Object.keys(base)) {
+      const hasExtra = extra[key] && extra[key].length > 0;
       out[key] = hasExtra ? [...base[key], ...extra[key]] : [...base[key]];
     }
   }
@@ -1211,8 +1282,8 @@ function render() {
   // Coordinate display
   const nth = py * W + px + 1;
   document.getElementById('coords').innerHTML =
-    `<ruby>賢治<rt>けんじ</rt></ruby> ${String(px).padStart(5,'0')} ` +
-    `× <ruby>南吉<rt>なんきち</rt></ruby> ${String(py).padStart(5,'0')} ` +
+    `${authorK} ${String(px).padStart(5,'0')} ` +
+    `× ${authorN} ${String(py).padStart(5,'0')} ` +
     `${(W * H).toLocaleString('ja-JP')} <ruby>篇<rt>へん</rt></ruby>中の ` +
     `第 ${nth.toLocaleString('ja-JP')} <ruby>篇<rt>へん</rt></ruby>`+
     `<br>Redistributed by Takehiro Hashimoto, 2026.`;
@@ -1289,6 +1360,7 @@ function applyCustomText() {
 
   // Mixed mode: base + custom together
   useCustomOnly = false;
+  updateAuthorDisplay();
   updateModeDisplay();
 
   statusEl.style.color = '#40a060';
@@ -1301,8 +1373,9 @@ function applyCustomText() {
 }
 
 /**
- * Use ONLY the user-supplied text — base Kenji/Nankichi vocabulary is suppressed.
- * Falls back to base only for categories the user text cannot fill (subj, verb, adj).
+ * Use ONLY the user-supplied text — base Kenji/Nankichi vocabulary is completely suppressed.
+ * User words are distributed across ALL vocabulary categories so every slot is filled
+ * from user data and no category falls back to the base corpus.
  */
 function applyCustomOnly() {
   const rawK     = document.getElementById('text-k').value.trim();
@@ -1318,20 +1391,38 @@ function applyCustomOnly() {
 
   if (rawK) {
     const { phrases, words } = parseText(rawK);
-    extraK = { subj: [], noun: words, verb: [], adj: [], phrase: phrases };
+    const allK = [...words, ...phrases];
+    // Distribute across every category so no slot falls back to base
+    extraK = {
+      subj:   words.length   > 0 ? words   : allK,
+      noun:   words.length   > 0 ? words   : allK,
+      place:  phrases.length > 0 ? phrases : allK,
+      verb:   words.length   > 0 ? words   : allK,
+      adj:    words.length   > 0 ? words   : allK,
+      phrase: phrases.length > 0 ? phrases : allK,
+    };
   } else {
-    extraK = { subj: [], noun: [], verb: [], adj: [], phrase: [] };
+    extraK = { subj: [], noun: [], place: [], verb: [], adj: [], phrase: [] };
   }
 
   if (rawN) {
     const { phrases, words } = parseText(rawN);
-    extraN = { subj: [], noun: words, verb: [], adj: [], phrase: phrases };
+    const allN = [...words, ...phrases];
+    extraN = {
+      subj:   words.length   > 0 ? words   : allN,
+      noun:   words.length   > 0 ? words   : allN,
+      place:  phrases.length > 0 ? phrases : allN,
+      verb:   words.length   > 0 ? words   : allN,
+      adj:    words.length   > 0 ? words   : allN,
+      phrase: phrases.length > 0 ? phrases : allN,
+    };
   } else {
-    extraN = { subj: [], noun: [], verb: [], adj: [], phrase: [] };
+    extraN = { subj: [], noun: [], place: [], verb: [], adj: [], phrase: [] };
   }
 
   // Custom-only mode: suppress base vocabulary where custom is available
   useCustomOnly = true;
+  updateAuthorDisplay();
   updateModeDisplay();
 
   statusEl.style.color = '#9020c0';
@@ -1348,10 +1439,13 @@ function resetCustomText() {
   extraK = { subj: [], noun: [], verb: [], adj: [], phrase: [] };
   extraN = { subj: [], noun: [], verb: [], adj: [], phrase: [] };
   useCustomOnly = false;
-  updateModeDisplay();
 
   document.getElementById('text-k').value = '';
   document.getElementById('text-n').value = '';
+  document.getElementById('author-k').value = '宮沢賢治';
+  document.getElementById('author-n').value = '新美南吉';
+  updateAuthorDisplay();
+  updateModeDisplay();
 
   const statusEl       = document.getElementById('upload-status');
   statusEl.style.color = '#7070c0';
